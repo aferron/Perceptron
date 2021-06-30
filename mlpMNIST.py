@@ -10,12 +10,22 @@ import itertools as itertools
 
 
 # Run the perceptron on the test data
-def run_test(num_test_examples, input_weights, x_test, test_predictions, t_test):
+def run_test(num_test_examples, i_to_h_weights, h_to_o_weights, x_test, test_predictions, t_test):
     j = 0
     test_correct = 0
     while j < num_test_examples:
-        test_dot_products = np.matmul(input_weights, x_test[j])
-        test_predictions[j] = np.argmax(test_dot_products)
+        hidden_dot_products = np.matmul(i_to_h_weights, x_test[j])
+        hidden_activation = 1/(1 + np.exp(-hidden_dot_products))
+        hidden_activation = np.insert(hidden_activation, 0, 1)
+
+        # do the same on the hidden layer
+        # output_dot_products is [10, 1]
+        # output_activation is [10, 1]
+        output_dot_products = np.matmul(h_to_o_weights, hidden_activation)
+        output_activation = 1/(1 + np.exp(-output_dot_products)) 
+
+        # the max of the activations is the picked number
+        test_predictions[j] = np.argmax(output_activation)
         if test_predictions[j] == t_test[j]:
             test_correct += 1
         j += 1
@@ -134,11 +144,11 @@ x = np.pad(x, ((0, 0), (1, 0)), 'constant', constant_values=(1, 0))
 x_test = np.reshape(x_test, (num_test_examples, -1)) / 255
 x_test = np.pad(x_test, ((0, 0), (1, 0)), 'constant', constant_values=(1, 0))
 
-# set starting input_weights randomly between -0.2 and -0.2
-# input_weights is [num_hidden_nodes, 785]
-# hidden_weights is [10, num_hidden_nodes]
-input_weights = np.random.uniform(low=-0.05, high=0.05, size=(num_hidden_nodes, num_input_nodes))
-hidden_weights = np.random.uniform(low=-0.05, high=0.05, size=(10, num_hidden_nodes))
+# set starting i_to_h_weights randomly between -0.2 and -0.2
+# i_to_h_weights is [num_hidden_nodes, 785]
+# h_to_o_weights is [10, num_hidden_nodes]
+i_to_h_weights = np.random.uniform(low=-0.05, high=0.05, size=(num_hidden_nodes - 1, num_input_nodes))
+h_to_o_weights = np.random.uniform(low=-0.05, high=0.05, size=(10, num_hidden_nodes))
 
 # store all predictions for the confusion matrix
 test_predictions = np.zeros(num_test_examples)
@@ -146,6 +156,7 @@ test_predictions = np.zeros(num_test_examples)
 # store error for each training example in a matrix holding
 # all error for the batch
 output_error = np.zeros(digits)
+hidden_error = np.zeros(num_hidden_nodes)
 
 # run it M times on the two datapoints
 epoch = 0
@@ -161,18 +172,19 @@ while epoch < epochs:
         j = 0
         # The dot product multiplies each pixel value
         # with the weight for its node and sums these values.
-        # There are ten sets of input_weights and ten dot products.
-        # input_weights is [10, 785]
+        # There are ten sets of i_to_h_weights and ten dot products.
+        # i_to_h_weights is [10, 785]
         # x[i] is [1, 785]
-        # hidden_dot_products is [num_hidden_nodes, 1]
-        # hidden_activation is [num_hidden_nodes, 1]
-        hidden_dot_products = np.matmul(input_weights, x[i])
+        # hidden_dot_products is [num_hidden_nodes - 1, 1]
+        # hidden_activation is [num_hidden_nodes - 1, 1], then [num_hidden_nodes, 1]
+        hidden_dot_products = np.matmul(i_to_h_weights, x[i])
         hidden_activation = 1/(1 + np.exp(-hidden_dot_products))
+        hidden_activation = np.insert(hidden_activation, 0, 1)
 
         # do the same on the hidden layer
         # output_dot_products is [10, 1]
         # output_activation is [10, 1]
-        output_dot_products = np.matmul(hidden_weights, hidden_activation)
+        output_dot_products = np.matmul(h_to_o_weights, hidden_activation)
         output_activation = 1/(1 + np.exp(-output_dot_products)) 
 
         # the max of the activations is the picked number
@@ -192,18 +204,19 @@ while epoch < epochs:
                 # output_error is [1, 10]
                 # hidden_error is [1, num_hidden_nodes]
                 output_error = output_activation * np.matmul(1 - output_activation, y_target - output_activation)
-                sum = np.matmul(output_error, hidden_weights)
+                sum = np.matmul(output_error, h_to_o_weights)
                 hidden_error = hidden_activation * np.matmul(1 - hidden_activation, sum)
+                hidden_error = np.delete(hidden_error, 0)
 
                 # update the weights
                 # diff is [10, 785]
                 # output_error = np.reshape(output_error, (1, 10)).T
-                hidden_weights -= eta * np.matmul(np.reshape(output_error, (digits, 1)), np.reshape(hidden_activation, (1, num_hidden_nodes)))
-                input_weights -= eta * np.matmul(np.reshape(hidden_error, (num_hidden_nodes, 1)), np.reshape(x[i], (1, num_input_nodes)))
+                h_to_o_weights -= eta * np.matmul(np.reshape(output_error, (digits, 1)), np.reshape(hidden_activation, (1, num_hidden_nodes)))
+                i_to_h_weights -= eta * np.matmul(np.reshape(hidden_error, (num_hidden_nodes - 1, 1)), np.reshape(x[i], (1, num_input_nodes)))
 
                 # diff = np.reshape(output_activation - y_target, (1, 10)).T
                 # xCol = np.reshape(x[i], (1, num_input_nodes))
-                # input_weights -= eta * np.matmul(diff, xCol)
+                # i_to_h_weights -= eta * np.matmul(diff, xCol)
         else:
             correct += 1
         i += 1
@@ -211,7 +224,7 @@ while epoch < epochs:
     accuracy[epoch] = correct / num_train_examples
 
     # run the perceptron on the test data
-    test_accuracy[epoch] = run_test(num_test_examples, input_weights, x_test, test_predictions, t_test)
+    test_accuracy[epoch] = run_test(num_test_examples, i_to_h_weights, h_to_o_weights, x_test, test_predictions, t_test)
     
     epoch += 1
 
