@@ -10,11 +10,11 @@ import itertools as itertools
 
 
 # Run the perceptron on the test data
-def run_test(num_test_examples, weights, x_test, test_predictions, t_test):
+def run_test(num_test_examples, input_weights, x_test, test_predictions, t_test):
     j = 0
     test_correct = 0
     while j < num_test_examples:
-        test_dot_products = np.matmul(weights, x_test[j])
+        test_dot_products = np.matmul(input_weights, x_test[j])
         test_predictions[j] = np.argmax(test_dot_products)
         if test_predictions[j] == t_test[j]:
             test_correct += 1
@@ -79,9 +79,6 @@ def plot_confusion_matrix(cm,
     plt.xlabel('Predicted\naccuracy={:0.4f}; misclass={:0.4f}'.format(accuracy, misclass))
     plt.show()
 
-# number of hidden units
-n = 20
-
 # number of epochs to run
 epochs = 5
 
@@ -93,6 +90,9 @@ alpha = 0.9
 
 # number of nodes (bias node + 28^2)
 num_input_nodes = 785
+
+# number of hidden nodes
+num_hidden_nodes = 20
 
 # learning rate 
 eta = .1
@@ -134,9 +134,10 @@ x = np.pad(x, ((0, 0), (1, 0)), 'constant', constant_values=(1, 0))
 x_test = np.reshape(x_test, (num_test_examples, -1)) / 255
 x_test = np.pad(x_test, ((0, 0), (1, 0)), 'constant', constant_values=(1, 0))
 
-# set starting weights randomly between -0.2 and -0.2
+# set starting input_weights randomly between -0.2 and -0.2
 # for a 10 * 785 matrix
-weights = np.random.uniform(low=-0.05, high=0.05, size=(10, 785))
+input_weights = np.random.uniform(low=-0.05, high=0.05, size=(10, 785))
+hidden_weights = np.random.uniform(low=-0.05, high=0.05, size=(10, 785))
 
 # store all predictions for the confusion matrix
 test_predictions = np.zeros(num_test_examples)
@@ -159,12 +160,12 @@ while epoch < epochs:
         j = 0
         # The dot product multiplies each pixel value
         # with the weight for its node and sums these values.
-        # There are ten sets of weights and ten dot products.
-        # weights is [10, 785]
+        # There are ten sets of input_weights and ten dot products.
+        # input_weights is [10, 785]
         # x[i] is [1, 785]
         # dot_products is [10, 1]
         # o_activation is [10, 1]
-        dot_products = np.matmul(weights, x[i])
+        dot_products = np.matmul(input_weights, x[i])
         o_activation = 1/(1 + np.exp(-dot_products)) 
 
         # the max of the activations is the picked number
@@ -182,16 +183,16 @@ while epoch < epochs:
 
                 # compute and store error
                 # output_error is [1, 10]
-                output_error = o_activation * np.matmul(1 - o_activation, y_target - o_activation)
+                # output_error = o_activation * np.matmul(1 - o_activation, y_target - o_activation)
 
-                # the formula to reset the weights
+                # the formula to reset the input_weights
                 # diff is [10, 785]
                 # output_error = np.reshape(output_error, (1, 10)).T
-                weights += eta * np.matmul(np.reshape(output_error, (10, 1)), np.reshape(x[i], (1, num_input_nodes))) # + alpha * prev_diff
+                # input_weights += eta * np.matmul(np.reshape(output_error, (10, 1)), np.reshape(x[i], (1, num_input_nodes))) # + alpha * prev_diff
 
-                # diff = np.reshape(o_activation - y_target, (1, 10)).T
-                # xCol = np.reshape(x[i], (1, num_input_nodes))
-                # weights -= eta * np.matmul(diff, xCol)
+                diff = np.reshape(o_activation - y_target, (1, 10)).T
+                xCol = np.reshape(x[i], (1, num_input_nodes))
+                input_weights -= eta * np.matmul(diff, xCol)
         else:
             correct += 1
         i += 1
@@ -199,7 +200,7 @@ while epoch < epochs:
     accuracy[epoch] = correct / num_train_examples
 
     # run the perceptron on the test data
-    test_accuracy[epoch] = run_test(num_test_examples, weights, x_test, test_predictions, t_test)
+    test_accuracy[epoch] = run_test(num_test_examples, input_weights, x_test, test_predictions, t_test)
     
     epoch += 1
 
