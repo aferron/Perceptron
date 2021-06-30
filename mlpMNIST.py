@@ -126,7 +126,6 @@ num_test_examples = len(x_test)
 # meaning whatever fits, which is 784 to start
 x = np.reshape(x, (num_train_examples, -1)) / 255
 
-# pad adds a value to an array
 # pad the 60,000 * 784 matrix called 'x'
 # appending 1 to the beginning of every row (making it 60,000 * 785)
 x = np.pad(x, ((0, 0), (1, 0)), 'constant', constant_values=(1, 0))
@@ -139,12 +138,12 @@ x_test = np.pad(x_test, ((0, 0), (1, 0)), 'constant', constant_values=(1, 0))
 # for a 10 * 785 matrix
 weights = np.random.uniform(low=-0.05, high=0.05, size=(10, 785))
 
-# create an array of 10 zeros as integers
-# y = np.zeros((10), dtype=int)
-
 # store all predictions for the confusion matrix
-# predictions = np.zeros(num_train_examples)
 test_predictions = np.zeros(num_test_examples)
+
+# store error for each training example in a matrix holding
+# all error for the batch
+output_error = np.zeros(digits)
 
 # run it M times on the two datapoints
 epoch = 0
@@ -157,9 +156,14 @@ while epoch < epochs:
     correct = 0
     # Go through all the training data
     while i < num_train_examples:
+        j = 0
         # The dot product multiplies each pixel value
         # with the weight for its node and sums these values.
         # There are ten sets of weights and ten dot products.
+        # weights is [10, 785]
+        # x[i] is [1, 785]
+        # dot_products is [10, 1]
+        # o_activation is [10, 1]
         dot_products = np.matmul(weights, x[i])
         o_activation = 1/(1 + np.exp(-dot_products)) 
 
@@ -172,14 +176,22 @@ while epoch < epochs:
             # only change the weights if we're not on the 0 epoch
             if epoch != 0:
                 # get an array as it should be to compare with o_activation
+                # y_target is [1, 10]
                 y_target = np.full(10, 0.1)
                 y_target[t[i]] = 0.9
 
+                # compute and store error
+                # output_error is [1, 10]
+                output_error = o_activation * np.matmul(1 - o_activation, y_target - o_activation)
+
                 # the formula to reset the weights
-                diff = np.reshape(o_activation - y_target, (1, 10)).T
-                xCol = np.reshape(x[i], (1, num_input_nodes))
-                new_weights = eta * np.matmul(diff, xCol)
-                weights -= new_weights
+                # diff is [10, 785]
+                # output_error = np.reshape(output_error, (1, 10)).T
+                weights += eta * np.matmul(np.reshape(output_error, (10, 1)), np.reshape(x[i], (1, num_input_nodes))) # + alpha * prev_diff
+
+                # diff = np.reshape(o_activation - y_target, (1, 10)).T
+                # xCol = np.reshape(x[i], (1, num_input_nodes))
+                # weights -= eta * np.matmul(diff, xCol)
         else:
             correct += 1
         i += 1
@@ -189,11 +201,6 @@ while epoch < epochs:
     # run the perceptron on the test data
     test_accuracy[epoch] = run_test(num_test_examples, weights, x_test, test_predictions, t_test)
     
-    # set improvement to see if we continue
-    # if epoch == 0:
-        # improvement = accuracy[epoch] 
-    # else:
-        # improvement = accuracy[epoch] - accuracy[epoch - 1]
     epoch += 1
 
 # plot the results
