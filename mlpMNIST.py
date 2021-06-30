@@ -135,9 +135,10 @@ x_test = np.reshape(x_test, (num_test_examples, -1)) / 255
 x_test = np.pad(x_test, ((0, 0), (1, 0)), 'constant', constant_values=(1, 0))
 
 # set starting input_weights randomly between -0.2 and -0.2
-# for a 10 * 785 matrix
-input_weights = np.random.uniform(low=-0.05, high=0.05, size=(10, 785))
-hidden_weights = np.random.uniform(low=-0.05, high=0.05, size=(10, 785))
+# input_weights is [num_hidden_nodes, 785]
+# hidden_weights is [10, num_hidden_nodes]
+input_weights = np.random.uniform(low=-0.05, high=0.05, size=(num_hidden_nodes, num_input_nodes))
+hidden_weights = np.random.uniform(low=-0.05, high=0.05, size=(10, num_hidden_nodes))
 
 # store all predictions for the confusion matrix
 test_predictions = np.zeros(num_test_examples)
@@ -163,36 +164,46 @@ while epoch < epochs:
         # There are ten sets of input_weights and ten dot products.
         # input_weights is [10, 785]
         # x[i] is [1, 785]
-        # dot_products is [10, 1]
-        # o_activation is [10, 1]
-        dot_products = np.matmul(input_weights, x[i])
-        o_activation = 1/(1 + np.exp(-dot_products)) 
+        # hidden_dot_products is [num_hidden_nodes, 1]
+        # hidden_activation is [num_hidden_nodes, 1]
+        hidden_dot_products = np.matmul(input_weights, x[i])
+        hidden_activation = 1/(1 + np.exp(-hidden_dot_products))
+
+        # do the same on the hidden layer
+        # output_dot_products is [10, 1]
+        # output_activation is [10, 1]
+        output_dot_products = np.matmul(hidden_weights, hidden_activation)
+        output_activation = 1/(1 + np.exp(-output_dot_products)) 
 
         # the max of the activations is the picked number
-        picked = np.argmax(o_activation)
+        picked = np.argmax(output_activation)
 
         # if the found number is wrong, train
         if not picked == t[i]:
 
             # only change the weights if we're not on the 0 epoch
             if epoch != 0:
-                # get an array as it should be to compare with o_activation
+                # get an array as it should be to compare with output_activation
                 # y_target is [1, 10]
                 y_target = np.full(10, 0.1)
                 y_target[t[i]] = 0.9
 
                 # compute and store error
                 # output_error is [1, 10]
-                # output_error = o_activation * np.matmul(1 - o_activation, y_target - o_activation)
+                # hidden_error is [1, num_hidden_nodes]
+                output_error = output_activation * np.matmul(1 - output_activation, y_target - output_activation)
+                sum = np.matmul(output_error, hidden_weights)
+                hidden_error = hidden_activation * np.matmul(1 - hidden_activation, sum)
 
-                # the formula to reset the input_weights
+                # update the weights
                 # diff is [10, 785]
                 # output_error = np.reshape(output_error, (1, 10)).T
-                # input_weights += eta * np.matmul(np.reshape(output_error, (10, 1)), np.reshape(x[i], (1, num_input_nodes))) # + alpha * prev_diff
+                hidden_weights -= eta * np.matmul(np.reshape(output_error, (digits, 1)), np.reshape(hidden_activation, (1, num_hidden_nodes)))
+                input_weights -= eta * np.matmul(np.reshape(hidden_error, (num_hidden_nodes, 1)), np.reshape(x[i], (1, num_input_nodes)))
 
-                diff = np.reshape(o_activation - y_target, (1, 10)).T
-                xCol = np.reshape(x[i], (1, num_input_nodes))
-                input_weights -= eta * np.matmul(diff, xCol)
+                # diff = np.reshape(output_activation - y_target, (1, 10)).T
+                # xCol = np.reshape(x[i], (1, num_input_nodes))
+                # input_weights -= eta * np.matmul(diff, xCol)
         else:
             correct += 1
         i += 1
