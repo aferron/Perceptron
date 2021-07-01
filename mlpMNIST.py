@@ -179,7 +179,7 @@ while epoch < epochs:
         # the max of the activations is the picked number
         picked = np.argmax(output_activation)
 
-        # if the found number is wrong, train
+        # if it's right, count it 
         if picked == t[i]:
             correct += 1
 
