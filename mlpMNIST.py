@@ -180,31 +180,30 @@ while epoch < epochs:
         picked = np.argmax(output_activation)
 
         # if the found number is wrong, train
-        if not picked == t[i]:
-
-            # only change the weights if we're not on the 0 epoch
-            if epoch != 0:
-                # get an array as it should be to compare with output_activation
-                # y_target is [1, 10]
-                y_target = np.full(10, 0.1)
-                y_target[t[i]] = 0.9
-
-                # compute and store error
-                # output_error is [1, 10]
-                # hidden_error is [1, num_hidden_nodes]
-                output_error = output_activation * np.matmul(1 - output_activation, y_target - output_activation)
-                sum = np.matmul(output_error, h_to_o_weights)
-                hidden_error = hidden_activation * np.matmul(1 - hidden_activation, sum)
-                hidden_error = np.delete(hidden_error, 0)
-
-                # update the weights
-                # diff is [10, 785]
-                output_error = np.reshape(output_error, (1, 10)).T
-                h_to_o_weights -= eta * np.matmul(np.reshape(output_error, (digits, 1)), np.reshape(hidden_activation, (1, num_hidden_nodes)))
-                i_to_h_weights -= eta * np.matmul(np.reshape(hidden_error, (num_hidden_nodes - 1, 1)), np.reshape(x[i], (1, num_input_nodes)))
-
-        else:
+        if picked == t[i]:
             correct += 1
+
+        # only change the weights if we're not on the 0 epoch
+        if epoch != 0:
+            # get an array as it should be to compare with output_activation
+            # y_target is [1, 10]
+            y_target = np.full(10, 0.1)
+            y_target[t[i]] = 0.9
+
+            # compute and store error
+            # output_error is [1, 10]
+            # hidden_error is [1, num_hidden_nodes]
+            output_error = output_activation * np.matmul(1 - output_activation, y_target - output_activation)
+            sum = np.matmul(output_error, h_to_o_weights)
+            hidden_error = hidden_activation * np.matmul(1 - hidden_activation, sum)
+            hidden_error = np.delete(hidden_error, 0)
+
+            # update the weights
+            # diff is [10, 785]
+            output_error = np.reshape(output_error, (1, 10)).T
+            h_to_o_weights -= eta * np.matmul(np.reshape(output_error, (digits, 1)), np.reshape(hidden_activation, (1, num_hidden_nodes)))
+            i_to_h_weights -= eta * np.matmul(np.reshape(hidden_error, (num_hidden_nodes - 1, 1)), np.reshape(x[i], (1, num_input_nodes)))
+
         i += 1
 
     accuracy[epoch] = correct / num_train_examples
