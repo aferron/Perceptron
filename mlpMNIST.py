@@ -92,9 +92,6 @@ def plot_confusion_matrix(cm,
 # number of epochs to run
 epochs = 5
 
-# batch size
-batch_size = 32
-
 # momentum
 alpha = 0.9
 
@@ -113,7 +110,6 @@ digits = 10
 # array to plot accuracy
 accuracy = np.zeros((epochs + 1), dtype=float)
 test_accuracy = np.zeros((epochs + 1), dtype=float)
-
 
 # load MNIST data set
 (x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()
@@ -144,7 +140,7 @@ x = np.pad(x, ((0, 0), (1, 0)), 'constant', constant_values=(1, 0))
 x_test = np.reshape(x_test, (num_test_examples, -1)) / 255
 x_test = np.pad(x_test, ((0, 0), (1, 0)), 'constant', constant_values=(1, 0))
 
-# set starting i_to_h_weights randomly between -0.2 and -0.2
+# set starting i_to_h_weights randomly between -0.5 and 0.5
 # i_to_h_weights is [num_hidden_nodes, 785]
 # h_to_o_weights is [10, num_hidden_nodes]
 i_to_h_weights = np.random.uniform(low=-0.05, high=0.05, size=(num_hidden_nodes - 1, num_input_nodes))
@@ -153,23 +149,16 @@ h_to_o_weights = np.random.uniform(low=-0.05, high=0.05, size=(10, num_hidden_no
 # store all predictions for the confusion matrix
 test_predictions = np.zeros(num_test_examples)
 
-# store error for each training example in a matrix holding
-# all error for the batch
-output_error = np.zeros(digits)
-hidden_error = np.zeros(num_hidden_nodes)
-
 # run it M times on the two datapoints
 epoch = 0
 
-
-# Continue while the perceptron is continuing to learn and
-# epochs is less than some set number (epochs)
+# Continue while
+# epochs is less than some set number 
 while epoch < epochs:
     i = 0
     correct = 0
     # Go through all the training data
     while i < num_train_examples:
-        j = 0
         # The dot product multiplies each pixel value
         # with the weight for its node and sums these values.
         # There are ten sets of i_to_h_weights and ten dot products.
@@ -177,14 +166,14 @@ while epoch < epochs:
         # x[i] is [1, 785]
         # hidden_dot_products is [num_hidden_nodes - 1, 1]
         # hidden_activation is [num_hidden_nodes - 1, 1], then [num_hidden_nodes, 1]
-        hidden_dot_products = np.matmul(i_to_h_weights, x[i])
+        hidden_dot_products = np.matmul(x[i], i_to_h_weights.transpose())
         hidden_activation = 1/(1 + np.exp(-hidden_dot_products))
         hidden_activation = np.insert(hidden_activation, 0, 1)
 
         # do the same on the hidden layer
         # output_dot_products is [10, 1]
         # output_activation is [10, 1]
-        output_dot_products = np.matmul(h_to_o_weights, hidden_activation)
+        output_dot_products = np.matmul(hidden_activation, h_to_o_weights.transpose())
         output_activation = 1/(1 + np.exp(-output_dot_products)) 
 
         # the max of the activations is the picked number
@@ -210,13 +199,10 @@ while epoch < epochs:
 
                 # update the weights
                 # diff is [10, 785]
-                # output_error = np.reshape(output_error, (1, 10)).T
+                output_error = np.reshape(output_error, (1, 10)).T
                 h_to_o_weights -= eta * np.matmul(np.reshape(output_error, (digits, 1)), np.reshape(hidden_activation, (1, num_hidden_nodes)))
                 i_to_h_weights -= eta * np.matmul(np.reshape(hidden_error, (num_hidden_nodes - 1, 1)), np.reshape(x[i], (1, num_input_nodes)))
 
-                # diff = np.reshape(output_activation - y_target, (1, 10)).T
-                # xCol = np.reshape(x[i], (1, num_input_nodes))
-                # i_to_h_weights -= eta * np.matmul(diff, xCol)
         else:
             correct += 1
         i += 1
