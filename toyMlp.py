@@ -73,22 +73,22 @@ while epoch < epochs:
         # hidden_dot_products is [num_hidden_nodes, 1]
         # hidden_activation is [num_hidden_nodes, 1]
         hidden_dot_products = np.matmul(x[i], input_weights.transpose())
-        print(hidden_dot_products)
+        # print(hidden_dot_products)
         hidden_activation = 1/(1 + np.exp(-hidden_dot_products))
-        print(hidden_activation)
+        # print(hidden_activation)
 
         # do the same on the hidden layer
         # output_dot_products is [10, 1]
         # output_activation is [10, 1]
         output_dot_products = np.matmul(hidden_activation, hidden_weights.transpose())
-        print(output_dot_products)
+        # print(output_dot_products)
         output_activation = 1/(1 + np.exp(-output_dot_products)) 
-        print(output_activation)
+        # print(output_activation)
 
         # the max of the activations is the picked number
         picked = np.argmax(output_activation)
-        print(picked)
-        print(t[i])
+        # print(picked)
+        # print(t[i])
 
 
         # print("\n\ni: ", i, "\noutput dot products: ", output_dot_products,
@@ -101,40 +101,40 @@ while epoch < epochs:
         # y_target is [1, 10]
         y_target = np.full(2, 0.1)
         y_target[t[i]] = 0.9
-        print(y_target)
+        # print(y_target)
 
         # compute and store error
         # output_error is [1, 2]
         # hidden_error is [1, num_hidden_nodes]
         diff1 = y_target - output_activation
-        print(diff1)
+        # print(diff1)
         diff2 = 1 - output_activation
-        print(diff2)
-        print(np.matmul(diff2, diff1))
-        print(np.multiply(output_activation, np.multiply(1 - output_activation, y_target - output_activation)))
+        # print(diff2)
+        # print(np.matmul(diff2, diff1))
+        # print(np.multiply(output_activation, np.multiply(1 - output_activation, y_target - output_activation)))
         output_error = np.multiply(output_activation, np.multiply(1 - output_activation, y_target - output_activation))
-        print(output_error)
+        # print(output_error)
 
 
         sum = np.matmul(output_error, hidden_weights)
         hidden_error = np.multiply(hidden_activation, np.multiply(1 - hidden_activation, sum))
-        print(sum)
-        print(hidden_activation)
-        print(np.multiply(1 - hidden_activation, sum))
+        # print(hidden_activation)
+        # print(1 - hidden_activation)
+        # print(sum)
+        # print(np.multiply(1 - hidden_activation, sum))
 
 
 
         # update the weights
         # diff is [10, 785]
-        # output_error = np.reshape(output_error, (1, 10)).T
-        # print("\n\ni: ", i, "   \nbefore updating: \nhidden weights: ", hidden_weights, "\ninput weights: ", input_weights)
+        print("i: ", i, "\n")
         h_to_o_delta_w = eta * np.matmul(np.reshape(output_error, (digits, 1)), np.reshape(hidden_activation, (1, num_hidden_nodes)))
         hidden_weights -= h_to_o_delta_w
+        print("h to o delta w: ", h_to_o_delta_w, "\n")
         i_to_h_delta_w = eta * np.matmul(np.reshape(hidden_error, (num_hidden_nodes, 1)), np.reshape(x[i], (1, num_input_nodes)))
         input_weights -= i_to_h_delta_w
-        # print("\n\nh_to_o_delta_w: ", h_to_o_delta_w)
-        # print("i_to_h_delta_w: ", i_to_h_delta_w)
-        quit()
+        print("i to h delta w: ", i_to_h_delta_w, "\n\n\n")
+
 
         # print("after updating: \nhidden_weights: ", hidden_weights, "input weights", input_weights, "\n")
 

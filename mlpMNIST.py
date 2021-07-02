@@ -201,8 +201,8 @@ while epoch < epochs:
             # update the weights
             # diff is [10, 785]
             output_error = np.reshape(output_error, (1, 10)).T
-            h_to_o_weights -= eta * np.matmul(np.reshape(output_error, (digits, 1)), np.reshape(hidden_activation, (1, num_hidden_nodes)))
-            i_to_h_weights -= eta * np.matmul(np.reshape(hidden_error, (num_hidden_nodes - 1, 1)), np.reshape(x[i], (1, num_input_nodes)))
+            h_to_o_weights += eta * np.matmul(np.reshape(output_error, (digits, 1)), np.reshape(hidden_activation, (1, num_hidden_nodes)))
+            i_to_h_weights += eta * np.matmul(np.reshape(hidden_error, (num_hidden_nodes - 1, 1)), np.reshape(x[i], (1, num_input_nodes)))
 
         i += 1
 
