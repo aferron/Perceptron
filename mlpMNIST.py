@@ -193,9 +193,9 @@ while epoch < epochs:
             # compute and store error
             # output_error is [1, 10]
             # hidden_error is [1, num_hidden_nodes]
-            output_error = output_activation * np.matmul(1 - output_activation, y_target - output_activation)
+            output_error = np.multiply(output_activation, np.multiply(1 - output_activation, y_target - output_activation))
             sum = np.matmul(output_error, h_to_o_weights)
-            hidden_error = hidden_activation * np.matmul(1 - hidden_activation, sum)
+            hidden_error = np.multiply(hidden_activation, np.multiply(1 - hidden_activation, sum))
             hidden_error = np.delete(hidden_error, 0)
 
             # update the weights
