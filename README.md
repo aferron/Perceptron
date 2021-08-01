@@ -1,5 +1,5 @@
 # Perceptron
-Trains a perceptron to recognize handwritten numbers using the MNIST data set.
+Neural Network to Recognize Handwritten Numbers Using the MNIST Data Set
 
 
 The MNIST data set contains 60,000 training images with handwritten numbers stored in 28 x 28 pixel images. Each pixel contains a number indicating its shading ranging from white to black. To train with this data the 784 pixels are taken as inputs, plus one for the bias to give 10 outputs indicating the number the perceptron calculates that is written. The accuracy of this output is checked, and weights for each input are adjusted to improve performance on the next epoch. As the process continues, the perceptron "learns" to identify the numbers with increasing accuracy.
